@@ -1,0 +1,643 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>AI 서비스를 활용한 부동산 경매</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            overflow: hidden;
+            background: #1a1a2e;
+            touch-action: pan-y;
+            -webkit-overflow-scrolling: touch;
+            position: fixed;
+            width: 100%;
+            height: 100%;
+        }
+
+        .slide-container {
+            width: 100vw;
+            height: 100vh;
+            position: relative;
+            display: flex;
+            transition: transform 0.6s ease-in-out;
+            will-change: transform;
+        }
+
+        .slide {
+            width: 100vw;
+            height: 100vh;
+            flex-shrink: 0;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            position: relative;
+            box-sizing: border-box;
+        }
+
+        /* 슬라이드 1: 메인 화면 */
+        .slide1 {
+            background: linear-gradient(135deg, #0f3460 0%, #16213e 50%, #1a1a2e 100%);
+            color: white;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .slide1::before {
+            content: '';
+            position: absolute;
+            width: 200%;
+            height: 200%;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="circuit" x="0" y="0" width="20" height="20" patternUnits="userSpaceOnUse"><circle cx="10" cy="10" r="1" fill="%23ffffff" opacity="0.1"/><path d="M5,10 L15,10 M10,5 L10,15" stroke="%23ffffff" stroke-width="0.5" opacity="0.05"/></pattern></defs><rect width="100" height="100" fill="url(%23circuit)"/></svg>') repeat;
+            top: -50%;
+            left: -50%;
+            animation: float 20s linear infinite;
+        }
+
+        @keyframes float {
+            0% { transform: translate(-50%, -50%) rotate(0deg); }
+            100% { transform: translate(-50%, -50%) rotate(360deg); }
+        }
+
+        .ai-brain {
+            width: clamp(200px, 40vw, 300px);
+            height: clamp(200px, 40vw, 300px);
+            margin: 20px auto;
+            position: relative;
+            background: linear-gradient(45deg, #00d4ff, #0080ff);
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: clamp(80px, 15vw, 120px);
+            font-weight: bold;
+            color: white;
+            text-shadow: 0 0 20px rgba(0, 212, 255, 0.5);
+            box-shadow: 0 20px 40px rgba(0, 128, 255, 0.3);
+            animation: pulse 2s ease-in-out infinite alternate;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); box-shadow: 0 20px 40px rgba(0, 128, 255, 0.3); }
+            100% { transform: scale(1.05); box-shadow: 0 25px 50px rgba(0, 128, 255, 0.5); }
+        }
+
+        .main-title {
+            font-size: clamp(1.8rem, 5vw, 3rem);
+            font-weight: 700;
+            text-align: center;
+            margin: 20px 0;
+            background: linear-gradient(45deg, #00d4ff, #0080ff, #ffffff);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: none;
+            line-height: 1.2;
+        }
+
+        .subtitle {
+            font-size: clamp(1rem, 3vw, 1.5rem);
+            text-align: center;
+            opacity: 0.8;
+            margin-bottom: 30px;
+        }
+
+        /* 슬라이드 2: 타이틀 강조 */
+        .slide2 {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .highlight-title {
+            font-size: clamp(2rem, 6vw, 4rem);
+            font-weight: 900;
+            text-align: center;
+            margin-bottom: 30px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+            animation: slideInFromTop 1s ease-out;
+            line-height: 1.2;
+        }
+
+        @keyframes slideInFromTop {
+            0% { transform: translateY(-100px); opacity: 0; }
+            100% { transform: translateY(0); opacity: 1; }
+        }
+
+        .highlight-box {
+            background: rgba(255,255,255,0.1);
+            border-radius: 20px;
+            padding: 40px;
+            backdrop-filter: blur(10px);
+            border: 2px solid rgba(255,255,255,0.2);
+            text-align: center;
+        }
+
+        .highlight-desc {
+            font-size: clamp(1rem, 2.5vw, 1.3rem);
+            line-height: 1.6;
+            margin-bottom: 20px;
+        }
+
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+            width: 100%;
+            max-width: 600px;
+        }
+
+        .feature-item {
+            background: rgba(255,255,255,0.1);
+            padding: 15px;
+            border-radius: 15px;
+            text-align: center;
+            font-weight: 600;
+            font-size: clamp(0.9rem, 2.5vw, 1.1rem);
+        }
+
+        /* 슬라이드 3: Contents */
+        .slide3 {
+            background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
+            color: #333;
+        }
+
+        .contents-title {
+            font-size: clamp(2rem, 5vw, 3rem);
+            font-weight: 700;
+            text-align: center;
+            margin-bottom: 40px;
+            color: #2d3748;
+        }
+
+        .contents-list {
+            max-width: 90%;
+            width: 100%;
+            margin: 0 auto;
+        }
+
+        .content-item {
+            background: white;
+            margin: 15px 0;
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            border-left: 5px solid #667eea;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            transition: transform 0.3s ease;
+            flex-wrap: wrap;
+            cursor: pointer;
+        }
+
+        .content-item:hover {
+            transform: translateX(10px);
+        }
+
+        .content-number {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.3rem;
+            font-weight: bold;
+            flex-shrink: 0;
+        }
+
+        .content-text {
+            flex: 1;
+            font-size: clamp(1rem, 2.5vw, 1.3rem);
+            font-weight: 600;
+            color: #4a5568;
+            min-width: 200px;
+        }
+
+        /* 바로가기 버튼 - 강제로 잘 보이게 */
+        .content-nav-btn {
+            background: #ff0000 !important;
+            color: white !important;
+            border: 3px solid #cc0000 !important;
+            padding: 15px 20px !important;
+            border-radius: 30px !important;
+            cursor: pointer !important;
+            font-weight: bold !important;
+            font-size: 1rem !important;
+            text-decoration: none !important;
+            display: inline-block !important;
+            box-shadow: 0 5px 15px rgba(255, 0, 0, 0.5) !important;
+            margin-left: 15px !important;
+            transition: all 0.3s ease !important;
+            touch-action: manipulation !important;
+            white-space: nowrap !important;
+        }
+
+        .content-nav-btn:hover {
+            background: #cc0000 !important;
+            transform: translateY(-3px) !important;
+            box-shadow: 0 8px 20px rgba(255, 0, 0, 0.7) !important;
+        }
+
+        /* 네비게이션 버튼 - 검은색으로 강제 표시 */
+        .navigation {
+            position: fixed !important;
+            bottom: 30px !important;
+            right: 30px !important;
+            z-index: 999999 !important;
+            display: flex !important;
+            gap: 15px !important;
+        }
+
+        .nav-btn {
+            background: #000000 !important;
+            color: white !important;
+            border: 3px solid #333333 !important;
+            padding: 15px 25px !important;
+            border-radius: 30px !important;
+            cursor: pointer !important;
+            font-weight: bold !important;
+            font-size: 1rem !important;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.8) !important;
+            transition: all 0.3s ease !important;
+            touch-action: manipulation !important;
+            min-width: 80px !important;
+            display: inline-block !important;
+        }
+
+        .nav-btn:hover {
+            background: #333333 !important;
+            transform: translateY(-3px) !important;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.9) !important;
+        }
+
+        .nav-btn:disabled {
+            opacity: 0.5 !important;
+            cursor: not-allowed !important;
+            transform: none !important;
+            background: #666666 !important;
+        }
+
+        /* 슬라이드 인디케이터 - 검은색으로 강제 표시 */
+        .slide-indicator {
+            position: fixed !important;
+            bottom: 30px !important;
+            left: 50% !important;
+            transform: translateX(-50%) !important;
+            display: flex !important;
+            gap: 12px !important;
+            z-index: 999999 !important;
+            background: #000000 !important;
+            padding: 12px 20px !important;
+            border-radius: 30px !important;
+            border: 3px solid #333333 !important;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.8) !important;
+        }
+
+        .indicator-dot {
+            width: 15px !important;
+            height: 15px !important;
+            border-radius: 50% !important;
+            background: rgba(255,255,255,0.5) !important;
+            cursor: pointer !important;
+            transition: all 0.3s ease !important;
+            touch-action: manipulation !important;
+        }
+
+        .indicator-dot.active {
+            background: white !important;
+            transform: scale(1.5) !important;
+            box-shadow: 0 0 15px rgba(255,255,255,0.8) !important;
+        }
+
+        /* 모바일 최적화 */
+        @media (max-width: 768px) {
+            .slide {
+                padding: 15px;
+            }
+            
+            .highlight-box {
+                padding: 20px;
+                margin: 20px 0;
+            }
+            
+            .content-item {
+                padding: 15px;
+                gap: 10px;
+                flex-direction: column;
+                text-align: center;
+            }
+            
+            .content-nav-btn {
+                margin-left: 0 !important;
+                margin-top: 10px !important;
+                padding: 12px 18px !important;
+                font-size: 0.9rem !important;
+            }
+            
+            .navigation {
+                bottom: 20px !important;
+                right: 20px !important;
+                gap: 10px !important;
+            }
+            
+            .nav-btn {
+                padding: 12px 20px !important;
+                font-size: 0.9rem !important;
+                min-width: 70px !important;
+            }
+            
+            .slide-indicator {
+                bottom: 20px !important;
+                padding: 10px 15px !important;
+                gap: 10px !important;
+            }
+            
+            .indicator-dot {
+                width: 12px !important;
+                height: 12px !important;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .content-item {
+                margin: 10px 0;
+                padding: 12px;
+            }
+            
+            .content-nav-btn {
+                padding: 10px 15px !important;
+                font-size: 0.85rem !important;
+            }
+            
+            .navigation {
+                bottom: 15px !important;
+                right: 15px !important;
+            }
+            
+            .nav-btn {
+                padding: 10px 15px !important;
+                font-size: 0.85rem !important;
+                min-width: 60px !important;
+            }
+            
+            .slide-indicator {
+                bottom: 15px !important;
+                padding: 8px 12px !important;
+            }
+            
+            .indicator-dot {
+                width: 10px !important;
+                height: 10px !important;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="slide-container" id="slideContainer">
+        <!-- 슬라이드 1: 메인 화면 -->
+        <div class="slide slide1">
+            <div class="ai-brain">AI</div>
+            <h1 class="main-title">AI 서비스를 활용한<br>부동산 경매</h1>
+            <p class="subtitle">인공지능과 함께하는 스마트한 부동산 투자</p>
+            <div class="feature-grid">
+                <div class="feature-item">데이터 분석</div>
+                <div class="feature-item">시장 예측</div>
+                <div class="feature-item">리스크 관리</div>
+            </div>
+        </div>
+
+        <!-- 슬라이드 2: 타이틀 강조 -->
+        <div class="slide slide2">
+            <h1 class="highlight-title">AI서비스를 활용한<br>부동산 경매</h1>
+            <div class="highlight-box">
+                <p class="highlight-desc">
+                    인공지능 기술을 활용하여 부동산 경매 시장을 분석하고<br>
+                    최적의 투자 기회를 찾아내는 혁신적인 접근법
+                </p>
+                <div class="feature-grid">
+                    <div class="feature-item">
+                        <strong>정확한 분석</strong><br>
+                        AI 기반 시세 예측
+                    </div>
+                    <div class="feature-item">
+                        <strong>빠른 판단</strong><br>
+                        실시간 데이터 처리
+                    </div>
+                    <div class="feature-item">
+                        <strong>리스크 최소화</strong><br>
+                        객관적 투자 지표
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 슬라이드 3: Contents -->
+        <div class="slide slide3">
+            <h1 class="contents-title">Contents</h1>
+            <div class="contents-list">
+                <div class="content-item" onclick="openPage('ai-service-definition.html')">
+                    <div class="content-number">1</div>
+                    <div class="content-text">AI 서비스 소개</div>
+                    <button class="content-nav-btn" onclick="event.stopPropagation(); openPage('ai-service-definition.html')">바로가기 →</button>
+                </div>
+                <div class="content-item" onclick="openPage('ai-service-types.html')">
+                    <div class="content-number">2</div>
+                    <div class="content-text">AI 서비스 종류별 정리</div>
+                    <button class="content-nav-btn" onclick="event.stopPropagation(); openPage('ai-service-types.html')">바로가기 →</button>
+                </div>
+                <div class="content-item" onclick="openPage('real-estate-ai-guide.html')">
+                    <div class="content-number">3</div>
+                    <div class="content-text">부동산 특화 AI 서비스 사용설명서</div>
+                    <button class="content-nav-btn" onclick="event.stopPropagation(); openPage('real-estate-ai-guide.html')">바로가기 →</button>
+                </div>
+                <div class="content-item" onclick="openPage('ai-prompt-guide.html')">
+                    <div class="content-number">4</div>
+                    <div class="content-text">부동산 경매 AI 활용 프롬프트 가이드</div>
+                    <button class="content-nav-btn" onclick="event.stopPropagation(); openPage('ai-prompt-guide.html')">바로가기 →</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 네비게이션 - 모든 페이지에 표시 -->
+    <div class="navigation">
+        <button class="nav-btn" onclick="previousSlide()" id="prevBtn">◀ 이전</button>
+        <button class="nav-btn" onclick="nextSlide()" id="nextBtn">다음 ▶</button>
+    </div>
+
+    <!-- 슬라이드 인디케이터 -->
+    <div class="slide-indicator">
+        <div class="indicator-dot active" onclick="goToSlide(0)"></div>
+        <div class="indicator-dot" onclick="goToSlide(1)"></div>
+        <div class="indicator-dot" onclick="goToSlide(2)"></div>
+    </div>
+
+    <script>
+        let currentSlide = 0;
+        const totalSlides = 3;
+
+        function updateSlidePosition() {
+            const container = document.getElementById('slideContainer');
+            container.style.transform = `translateX(-${currentSlide * 100}vw)`;
+            
+            // 인디케이터 업데이트
+            document.querySelectorAll('.indicator-dot').forEach((dot, index) => {
+                dot.classList.toggle('active', index === currentSlide);
+            });
+            
+            // 버튼 상태 업데이트
+            document.getElementById('prevBtn').disabled = currentSlide === 0;
+            document.getElementById('nextBtn').disabled = currentSlide === totalSlides - 1;
+        }
+
+        function nextSlide() {
+            if (currentSlide < totalSlides - 1) {
+                currentSlide++;
+                updateSlidePosition();
+            }
+        }
+
+        function previousSlide() {
+            if (currentSlide > 0) {
+                currentSlide--;
+                updateSlidePosition();
+            }
+        }
+
+        function goToSlide(slideIndex) {
+            currentSlide = slideIndex;
+            updateSlidePosition();
+        }
+
+        // 키보드 네비게이션
+        document.addEventListener('keydown', function(event) {
+            if (event.key === 'ArrowRight') {
+                nextSlide();
+            } else if (event.key === 'ArrowLeft') {
+                previousSlide();
+            }
+        });
+
+        // 초기 설정
+        updateSlidePosition();
+
+        // 터치 스와이프 지원 개선
+        let startX = 0;
+        let startY = 0;
+        let isDragging = false;
+
+        document.addEventListener('touchstart', function(event) {
+            startX = event.touches[0].clientX;
+            startY = event.touches[0].clientY;
+            isDragging = false;
+        }, { passive: true });
+
+        document.addEventListener('touchmove', function(event) {
+            if (!startX || !startY) return;
+            
+            let currentX = event.touches[0].clientX;
+            let currentY = event.touches[0].clientY;
+            
+            let diffX = Math.abs(startX - currentX);
+            let diffY = Math.abs(startY - currentY);
+            
+            // 수평 스와이프가 더 큰 경우 세로 스크롤 방지
+            if (diffX > diffY && diffX > 10) {
+                event.preventDefault();
+                isDragging = true;
+            }
+        }, { passive: false });
+
+        document.addEventListener('touchend', function(event) {
+            if (!startX || !startY || !isDragging) {
+                startX = 0;
+                startY = 0;
+                isDragging = false;
+                return;
+            }
+
+            let endX = event.changedTouches[0].clientX;
+            let endY = event.changedTouches[0].clientY;
+
+            let diffX = startX - endX;
+            let diffY = startY - endY;
+
+            // 수평 스와이프가 수직 스와이프보다 큰 경우에만 처리
+            if (Math.abs(diffX) > Math.abs(diffY) && Math.abs(diffX) > 50) {
+                if (diffX > 0) {
+                    nextSlide(); // 왼쪽으로 스와이프 = 다음 슬라이드
+                } else {
+                    previousSlide(); // 오른쪽으로 스와이프 = 이전 슬라이드
+                }
+            }
+
+            startX = 0;
+            startY = 0;
+            isDragging = false;
+        }, { passive: true });
+
+        // 모바일 친화적인 페이지 열기 함수
+        function openPage(url) {
+            console.log('Opening page:', url);
+            
+            // GitHub Pages URL 구성
+            const baseUrl = window.location.origin + window.location.pathname.replace(/\/[^\/]*$/, '/');
+            const fullUrl = baseUrl + url;
+            
+            console.log('Full URL:', fullUrl);
+            
+            // 1. 현재 탭에서 열기 (모바일에서 가장 안정적)
+            if (/Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
+                window.location.href = fullUrl;
+                return;
+            }
+            
+            // 2. 데스크톱에서는 새 탭으로 열기 시도
+            try {
+                const newWindow = window.open(fullUrl, '_blank', 'noopener,noreferrer');
+                if (!newWindow || newWindow.closed || typeof newWindow.closed == 'undefined') {
+                    // 팝업이 차단된 경우
+                    showUrlDialog(fullUrl);
+                }
+            } catch (e) {
+                console.error('Error opening page:', e);
+                showUrlDialog(fullUrl);
+            }
+        }
+
+        // URL 다이얼로그 표시
+        function showUrlDialog(url) {
+            if (confirm(`새 탭에서 페이지를 열 수 없습니다.\n현재 탭에서 열까요?\n\n${url}`)) {
+                window.location.href = url;
+            } else {
+                // URL 복사 기능
+                if (navigator.clipboard && window.isSecureContext) {
+                    navigator.clipboard.writeText(url).then(() => {
+                        alert('URL이 클립보드에 복사되었습니다.\n새 탭에서 붙여넣기해주세요.');
+                    }).catch(() => {
+                        prompt('아래 URL을 복사하여 새 탭에서 열어주세요:', url);
+                    });
+                } else {
+                    prompt('아래 URL을 복사하여 새 탭에서 열어주세요:', url);
+                }
+            }
+        }
+    </script>
+</body>
+</html>
