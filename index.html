@@ -56,11 +56,12 @@
 
         .slide-3 {
             justify-content: flex-start;
-            overflow-y: auto;
-            overflow-x: hidden;
-            -webkit-overflow-scrolling: touch;
-            padding-top: 30px;
-            padding-bottom: 150px;
+            overflow-y: scroll !important;
+            overflow-x: hidden !important;
+            -webkit-overflow-scrolling: touch !important;
+            padding-top: 20px;
+            padding-bottom: 100px;
+            touch-action: pan-y !important;
         }
 
         /* 슬라이드 1: 메인 화면 */
@@ -197,10 +198,11 @@
             text-align: center;
             margin-bottom: 30px;
             color: #2d3748;
+            background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
+            padding: 15px 0;
+            margin: 0 -20px 20px -20px;
             position: sticky;
             top: 0;
-            background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
-            padding: 20px 0;
             z-index: 10;
         }
 
@@ -283,7 +285,7 @@
             transform: translateY(0);
         }
 
-        /* 네비게이션 버튼 - 모든 페이지에 표시 */
+        /* 네비게이션 버튼 - 1, 2페이지에만 표시 */
         .navigation {
             position: fixed;
             bottom: 25px;
@@ -291,6 +293,11 @@
             z-index: 1000;
             display: flex;
             gap: 12px;
+        }
+
+        /* 3페이지에서 네비게이션 숨김 */
+        .slide-3-active .navigation {
+            display: none;
         }
 
         .nav-btn {
@@ -361,8 +368,10 @@
             }
 
             .slide-3 {
-                padding-top: 20px;
-                padding-bottom: 120px;
+                padding-top: 10px;
+                padding-bottom: 80px;
+                padding-left: 10px;
+                padding-right: 10px;
             }
 
             .highlight-box {
@@ -412,16 +421,26 @@
                 width: 10px;
                 height: 10px;
             }
+
+            .contents-title {
+                font-size: 1.6rem;
+                padding: 10px 0;
+                margin: 0 -10px 15px -10px;
+            }
         }
 
         @media (max-width: 480px) {
             .slide-3 {
-                padding-bottom: 140px;
+                padding-bottom: 60px;
+                padding-left: 8px;
+                padding-right: 8px;
             }
 
             .contents-title {
-                margin-bottom: 20px;
-                padding: 15px 0;
+                margin-bottom: 15px;
+                padding: 8px 0;
+                font-size: 1.4rem;
+                margin: 0 -8px 10px -8px;
             }
 
             .content-item {
@@ -563,6 +582,14 @@
             document.getElementById('prevBtn').disabled = currentSlide === 0;
             document.getElementById('nextBtn').disabled = currentSlide === totalSlides - 1;
 
+            // 3페이지에서 네비게이션 숨김
+            const navigation = document.querySelector('.navigation');
+            if (currentSlide === 2) {
+                navigation.style.display = 'none';
+            } else {
+                navigation.style.display = 'flex';
+            }
+
             // 디버깅용
             console.log(`현재 슬라이드: ${currentSlide + 1}/${totalSlides}`);
         }
@@ -616,14 +643,12 @@
             const diffX = Math.abs(startX - currentX);
             const diffY = Math.abs(startY - currentY);
             
-            // 3페이지에서는 세로 스크롤 우선
+            // 3페이지에서는 항상 세로 스크롤 허용
             if (currentSlide === 2) {
-                if (diffY > diffX && diffY > 20) {
-                    return; // 세로 스크롤 허용
-                }
+                return; // 터치 이벤트를 방해하지 않음
             }
             
-            // 가로 스와이프가 더 큰 경우
+            // 1, 2페이지에서만 가로 스와이프 처리
             if (diffX > diffY && diffX > 20) {
                 event.preventDefault();
                 isDragging = true;
@@ -631,7 +656,15 @@
         }, { passive: false });
 
         document.addEventListener('touchend', function(event) {
-            if (!startX || !startY || !isDragging) {
+            if (!startX || !startY) {
+                startX = 0;
+                startY = 0;
+                isDragging = false;
+                return;
+            }
+
+            // 3페이지에서는 스와이프 페이지 전환 비활성화
+            if (currentSlide === 2) {
                 startX = 0;
                 startY = 0;
                 isDragging = false;
@@ -641,7 +674,7 @@
             const endX = event.changedTouches[0].clientX;
             const diffX = startX - endX;
 
-            if (Math.abs(diffX) > 50) {
+            if (isDragging && Math.abs(diffX) > 50) {
                 if (diffX > 0) {
                     nextSlide();
                 } else {
